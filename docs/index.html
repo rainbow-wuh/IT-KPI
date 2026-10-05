@@ -781,11 +781,31 @@
   /* ================= STATE ================= */
   var entries = {};      // key: kpiId::monthKey -> {status,actual,detail,updatedBy,updatedAt}
   // การเชื่อมต่อ Google Sheet ผ่าน Google Apps Script (google.script.run)
-  var HAS_SHEET = !!(window.google && google.script && google.script.run);
+  // URL เว็บแอป Apps Script ใช้เมื่อเปิดหน้านี้จากที่อื่นที่ไม่ใช่ Apps Script (เช่น GitHub Pages)
+  var API_URL = "https://script.google.com/macros/s/AKfycbzenmdVdks0O_HiLDc-_bbr33N864CsZh9N2jGT6hHijI7DDMYtOfM64T-2fe5EXLbc2g/exec";
+  var HAS_GAS = !!(window.google && google.script && google.script.run);
+  var HAS_SHEET = HAS_GAS || !!API_URL;
   var sheetLoaded = false;
   function api(fn, arg){
-    return new Promise(function(resolve, reject){
-      google.script.run.withSuccessHandler(resolve).withFailureHandler(reject)[fn](arg);
+    if (HAS_GAS){
+      return new Promise(function(resolve, reject){
+        google.script.run.withSuccessHandler(resolve).withFailureHandler(reject)[fn](arg);
+      });
+    }
+    // ส่งแบบ text/plain เพื่อให้เบราว์เซอร์เรียก Apps Script ข้ามโดเมนได้โดยไม่ติด CORS
+    return fetch(API_URL, {
+      method: "POST",
+      headers: {"Content-Type": "text/plain;charset=utf-8"},
+      body: JSON.stringify({fn: fn, arg: arg === undefined ? null : arg})
+    }).then(function(r){
+      if (!r.ok) throw new Error("เชื่อมต่อเว็บแอปไม่ได้ (HTTP " + r.status + ")");
+      return r.text();
+    }).then(function(text){
+      var d;
+      try{ d = JSON.parse(text); }
+      catch(e){ throw new Error("เว็บแอปยังไม่รองรับการเรียกจากภายนอก กรุณาอัปเดต Code.gs และสร้างเวอร์ชันใหม่"); }
+      if (!d.ok) throw new Error(d.error || "ไม่ทราบสาเหตุ");
+      return d.result;
     });
   }
   function errText(err){ return (err && err.message) ? err.message : String(err || "ไม่ทราบสาเหตุ"); }

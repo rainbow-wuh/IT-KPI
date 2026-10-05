@@ -4,12 +4,14 @@
 
 หน้าเว็บ ITWUH KPI Tracker เก็บข้อมูลใน Google Sheet ผ่าน Google Apps Script ทีมทุกคนเห็นข้อมูลชุดเดียวกัน
 
+**เปิดใช้งาน:** https://rainbow-wuh.github.io/IT-KPI/
+
 ## ไฟล์ในโปรเจกต์
 
 | ไฟล์ | ใช้ทำอะไร |
 |---|---|
 | `apps-script/Code.gs` | ส่วนที่อ่านและเขียนข้อมูลลง Google Sheet |
-| `apps-script/index.html` | หน้าเว็บ KPI Tracker |
+| `docs/index.html` | หน้าเว็บ KPI Tracker (GitHub Pages เปิดจากไฟล์นี้ และใช้เป็นไฟล์ `index` ใน Apps Script ได้ด้วย) |
 | `database/ITWUH_KPI_Database.xlsx` | แม่แบบฐานข้อมูล พร้อม KPI ตั้งต้น 27 ตัว ใช้นำเข้าเป็น Google Sheet |
 
 ## โครงสร้างฐานข้อมูล (แท็บใน Google Sheet)
@@ -31,11 +33,11 @@
 1. อัปโหลด `database/ITWUH_KPI_Database.xlsx` ขึ้น Google Drive แล้วเปิดด้วย Google ชีต
 2. ในชีต ไปที่ **ส่วนขยาย > Apps Script**
 3. วางเนื้อหา `apps-script/Code.gs` แทนโค้ดเดิมในไฟล์ `Code.gs`
-4. เพิ่มไฟล์ HTML ชื่อ `index` แล้ววางเนื้อหา `apps-script/index.html`
+4. เพิ่มไฟล์ HTML ชื่อ `index` แล้ววางเนื้อหา `docs/index.html`
 5. **ทำให้ใช้งานได้ > การทำให้ใช้งานได้รายการใหม่ > เว็บแอป**
    - ดำเนินการในฐานะ: ฉัน
-   - ผู้มีสิทธิ์เข้าถึง: ทุกคนที่มีบัญชี Google
-6. แชร์ URL เว็บแอปให้ทีม
+   - ผู้มีสิทธิ์เข้าถึง: ทุกคน (ต้องเป็น "ทุกคน" หน้าเว็บบน GitHub Pages จึงเรียกใช้ได้)
+6. ถ้า URL เว็บแอปเปลี่ยน ให้แก้ค่า `API_URL` ใน `docs/index.html` แล้ว push ขึ้น GitHub
 
 ## การอัปเดตโค้ด
 
@@ -45,4 +47,5 @@
 
 - การลบตัวชี้วัดในหน้าเว็บ คือการตั้ง `is_active` เป็น FALSE ผลย้อนหลังยังอยู่ในชีต
 - `count_value` เก็บจำนวนของเดือนนั้น ยอดสะสมคำนวณในแท็บ `summary`
-- ถ้าเปิด `index.html` ตรงจากเครื่อง จะบันทึกถาวรไม่ได้ ต้องเปิดผ่าน URL เว็บแอป
+- หน้าเว็บเปิดได้ 2 ทาง คือ GitHub Pages และ URL เว็บแอป Apps Script ทั้งสองทางบันทึกลงชีตเดียวกัน
+- repo นี้เป็น public และ URL เว็บแอปอยู่ในโค้ด ใครมีลิงก์ก็บันทึกข้อมูลได้

@@ -20,6 +20,31 @@ function doGet() {
     .addMetaTag('viewport', 'width=device-width, initial-scale=1');
 }
 
+/* ---------- รับคำสั่งจากหน้าเว็บที่อยู่นอก Apps Script (เช่น GitHub Pages) ---------- */
+// หน้าเว็บส่ง POST แบบ text/plain มาเป็น {"fn": "ชื่อฟังก์ชัน", "arg": ข้อมูล}
+// เรียกได้เฉพาะฟังก์ชันในรายการนี้เท่านั้น
+var API_FUNCTIONS = {
+  getAllData: getAllData,
+  saveEntry: saveEntry,
+  saveKpi: saveKpi,
+  deactivateKpi: deactivateKpi,
+  addFiscalYear: addFiscalYear
+};
+
+function doPost(e) {
+  var out;
+  try {
+    var req = JSON.parse(e.postData.contents);
+    var fn = API_FUNCTIONS[req.fn];
+    if (!fn) throw new Error('ไม่รู้จักคำสั่ง: ' + req.fn);
+    out = {ok: true, result: fn(req.arg)};
+  } catch (err) {
+    out = {ok: false, error: String((err && err.message) || err)};
+  }
+  return ContentService.createTextOutput(JSON.stringify(out))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
 /* ---------- ตัวช่วย ---------- */
 function sheet_(name) {
   var sh = SpreadsheetApp.getActive().getSheetByName(name);
