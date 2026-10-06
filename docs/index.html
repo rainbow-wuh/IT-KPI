@@ -782,7 +782,7 @@
   var entries = {};      // key: kpiId::monthKey -> {status,actual,detail,updatedBy,updatedAt}
   // การเชื่อมต่อ Google Sheet ผ่าน Google Apps Script (google.script.run)
   // URL เว็บแอป Apps Script ใช้เมื่อเปิดหน้านี้จากที่อื่นที่ไม่ใช่ Apps Script (เช่น GitHub Pages)
-  var API_URL = "https://script.google.com/macros/s/AKfycbzenmdVdks0O_HiLDc-_bbr33N864CsZh9N2jGT6hHijI7DDMYtOfM64T-2fe5EXLbc2g/exec";
+  var API_URL = "https://script.google.com/macros/s/AKfycbyT9ZX0SDcIqTNKY4aJ9acKLfqSdiBk_aifyZmOIQZECXvQMcdvhIqvPPlaXpKW5fLI_g/exec";
   var HAS_GAS = !!(window.google && google.script && google.script.run);
   var HAS_SHEET = HAS_GAS || !!API_URL;
   var sheetLoaded = false;
