@@ -14,7 +14,17 @@ var TH_MONTH = ['ต.ค.', 'พ.ย.', 'ธ.ค.', 'ม.ค.', 'ก.พ.', 'ม
 var Q_LABEL = {1: 'Q1 (ต.ค.–ธ.ค.)', 2: 'Q2 (ม.ค.–มี.ค.)', 3: 'Q3 (เม.ย.–มิ.ย.)', 4: 'Q4 (ก.ค.–ก.ย.)'};
 
 /* ---------- เปิดหน้าเว็บ ---------- */
-function doGet() {
+function doGet(e) {
+  var name = e && e.parameter && e.parameter.api;
+  if (name) {
+    try {
+      var fn = GET_FUNCTIONS[name];
+      if (!fn) throw new Error('คำสั่งนี้เรียกผ่าน GET ไม่ได้: ' + name);
+      return json_({ok: true, result: fn()});
+    } catch (err) {
+      return json_({ok: false, error: String((err && err.message) || err)});
+    }
+  }
   return HtmlService.createHtmlOutputFromFile('index')
     .setTitle('ITWUH KPI Tracker')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1');
@@ -23,7 +33,23 @@ function doGet() {
 /* ---------- รับคำสั่งจากหน้าเว็บที่อยู่นอก Apps Script (เช่น GitHub Pages) ---------- */
 // หน้าเว็บส่ง POST แบบ text/plain มาเป็น {"fn": "ชื่อฟังก์ชัน", "arg": ข้อมูล}
 // เรียกได้เฉพาะฟังก์ชันในรายการนี้เท่านั้น
+var API_VERSION = '2026-10-06';
+
+// ใช้ตรวจว่าเว็บแอปรันโค้ดเวอร์ชันไหน และผูกกับชีตไหน
+function ping() {
+  return {version: API_VERSION, sheet: SpreadsheetApp.getActive().getName(), time: now_()};
+}
+
+// คำสั่งที่เรียกผ่าน GET ได้ (อ่านอย่างเดียว) เช่น .../exec?api=ping
+var GET_FUNCTIONS = {ping: ping, getAllData: getAllData};
+
+function json_(out) {
+  return ContentService.createTextOutput(JSON.stringify(out))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
 var API_FUNCTIONS = {
+  ping: ping,
   getAllData: getAllData,
   saveEntry: saveEntry,
   saveKpi: saveKpi,
@@ -41,8 +67,7 @@ function doPost(e) {
   } catch (err) {
     out = {ok: false, error: String((err && err.message) || err)};
   }
-  return ContentService.createTextOutput(JSON.stringify(out))
-    .setMimeType(ContentService.MimeType.JSON);
+  return json_(out);
 }
 
 /* ---------- ตัวช่วย ---------- */
