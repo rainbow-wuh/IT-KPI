@@ -792,8 +792,46 @@
         google.script.run.withSuccessHandler(resolve).withFailureHandler(reject)[fn](arg);
       });
     }
+    // ลองวิธีปกติ (fetch) ก่อน ถ้าเบราว์เซอร์หรือเครือข่ายบล็อก ให้สลับไปโหมดสำรองโดยอัตโนมัติ
+    if (useJsonp) return jsonp(fn, arg);
+    return viaFetch(fn, arg).catch(function(err){
+      if (!err || !err.needsCheck) throw err;
+      return jsonp(fn, arg).then(function(res){
+        useJsonp = true;   // ครั้งต่อไปใช้โหมดสำรองเลย ไม่ต้องลอง fetch ซ้ำ
+        return res;
+      });
+    });
+  }
+
+  // โหมดสำรอง: โหลดผลลัพธ์เป็นไฟล์สคริปต์ (JSONP) เบราว์เซอร์ไม่บล็อกวิธีนี้
+  var useJsonp = false;
+  var jsonpSeq = 0;
+  function jsonp(fn, arg){
+    return new Promise(function(resolve, reject){
+      var cbName = "__kpiCb" + (++jsonpSeq) + "_" + Date.now();
+      var s = document.createElement("script");
+      var timer = setTimeout(function(){ done(); fail("เว็บแอปไม่ตอบกลับ (หมดเวลา) ถ้าเพิ่งแก้ Code.gs ให้สร้างเวอร์ชันใหม่ใน Apps Script"); }, 30000);
+      function done(){
+        clearTimeout(timer);
+        try{ delete window[cbName]; }catch(e){ window[cbName] = undefined; }
+        if (s.parentNode) s.parentNode.removeChild(s);
+      }
+      function fail(msg){ var e = new Error(msg); e.needsCheck = true; reject(e); }
+      window[cbName] = function(d){
+        done();
+        if (d && d.ok) resolve(d.result);
+        else reject(new Error((d && d.error) || "ไม่ทราบสาเหตุ"));
+      };
+      var url = API_URL + "?api=" + encodeURIComponent(fn) + "&callback=" + cbName;
+      if (arg !== undefined && arg !== null) url += "&arg=" + encodeURIComponent(JSON.stringify(arg));
+      s.src = url;
+      s.onerror = function(){ done(); fail("เชื่อมต่อเว็บแอปไม่ได้ ตรวจอินเทอร์เน็ต หรือเครือข่ายอาจบล็อก script.google.com"); };
+      document.head.appendChild(s);
+    });
+  }
+
+  function viaFetch(fn, arg){
     // อ่านข้อมูลใช้ GET ธรรมดา ส่วนการบันทึกส่ง POST แบบ text/plain
-    // ทั้งสองแบบเบราว์เซอร์เรียก Apps Script ข้ามโดเมนได้โดยไม่ติด CORS
     var req = (fn === "getAllData" || fn === "ping")
       ? fetch(API_URL + "?api=" + fn)
       : fetch(API_URL, {

@@ -15,15 +15,25 @@ var Q_LABEL = {1: 'Q1 (ต.ค.–ธ.ค.)', 2: 'Q2 (ม.ค.–มี.ค.)', 
 
 /* ---------- เปิดหน้าเว็บ ---------- */
 function doGet(e) {
-  var name = e && e.parameter && e.parameter.api;
+  var p = (e && e.parameter) || {};
+  var name = p.api;
   if (name) {
+    // callback = โหมดสำรอง (JSONP) หน้าเว็บโหลดผลลัพธ์แบบไฟล์สคริปต์ ใช้เมื่อเบราว์เซอร์บล็อกการเรียกข้ามเว็บ
+    var cb = p.callback && /^[A-Za-z_$][\w$]*$/.test(p.callback) ? p.callback : null;
+    var out;
     try {
-      var fn = GET_FUNCTIONS[name];
+      var fn = cb ? API_FUNCTIONS[name] : GET_FUNCTIONS[name];
       if (!fn) throw new Error('คำสั่งนี้เรียกผ่าน GET ไม่ได้: ' + name);
-      return json_({ok: true, result: fn()});
+      var arg = p.arg ? JSON.parse(p.arg) : null;
+      out = {ok: true, result: fn(arg)};
     } catch (err) {
-      return json_({ok: false, error: String((err && err.message) || err)});
+      out = {ok: false, error: String((err && err.message) || err)};
     }
+    if (cb) {
+      return ContentService.createTextOutput(cb + '(' + JSON.stringify(out) + ');')
+        .setMimeType(ContentService.MimeType.JAVASCRIPT);
+    }
+    return json_(out);
   }
   return HtmlService.createHtmlOutputFromFile('index')
     .setTitle('ITWUH KPI Tracker')
@@ -33,7 +43,7 @@ function doGet(e) {
 /* ---------- รับคำสั่งจากหน้าเว็บที่อยู่นอก Apps Script (เช่น GitHub Pages) ---------- */
 // หน้าเว็บส่ง POST แบบ text/plain มาเป็น {"fn": "ชื่อฟังก์ชัน", "arg": ข้อมูล}
 // เรียกได้เฉพาะฟังก์ชันในรายการนี้เท่านั้น
-var API_VERSION = '2026-10-06';
+var API_VERSION = '2026-10-06b';
 
 // ใช้ตรวจว่าเว็บแอปรันโค้ดเวอร์ชันไหน และผูกกับชีตไหน
 function ping() {
